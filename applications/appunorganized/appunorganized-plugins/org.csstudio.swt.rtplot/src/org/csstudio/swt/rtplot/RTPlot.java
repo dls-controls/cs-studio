@@ -400,7 +400,7 @@ public class RTPlot<XTYPE extends Comparable<XTYPE>> extends Composite
     {
         plot.removeAnnotation(annotation);
     }
-    
+
     /** @param trace Trace to remove annotation from */
     public void removeAnnotation(final Trace<XTYPE> trace)
     {
