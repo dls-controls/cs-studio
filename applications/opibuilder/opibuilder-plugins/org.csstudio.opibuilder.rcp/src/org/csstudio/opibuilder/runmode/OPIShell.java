@@ -33,6 +33,8 @@ import org.eclipse.core.runtime.IPath;
 import org.eclipse.gef.DragTracker;
 import org.eclipse.gef.EditDomain;
 import org.eclipse.gef.GraphicalViewer;
+import org.eclipse.gef.KeyHandler;
+import org.eclipse.gef.KeyStroke;
 import org.eclipse.gef.Request;
 import org.eclipse.gef.commands.CommandStack;
 import org.eclipse.gef.editparts.ScalableRootEditPart;
@@ -134,8 +136,10 @@ public final class OPIShell implements IOPIRuntime {
         actionRegistry = new ActionRegistry();
 
         viewer = new GraphicalViewerImpl();
+
         viewer.createControl(shell);
         viewer.setEditPartFactory(new WidgetEditPartFactory(ExecutionMode.RUN_MODE));
+        viewer.setKeyHandler(new KeyHandler());
 
         viewer.setRootEditPart(new ScalableRootEditPart() {
             @Override
@@ -278,7 +282,10 @@ public final class OPIShell implements IOPIRuntime {
      */
     public void registerWithView(IViewPart view) {
         this.view = view;
-        actionRegistry.registerAction(new RefreshOPIAction(this));
+        RefreshOPIAction refreshAction = new RefreshOPIAction(this);
+        actionRegistry.registerAction(refreshAction);
+        // Explicitly bind refresh action to the F5 keypress.
+        viewer.getKeyHandler().put(KeyStroke.getPressed(SWT.F5, 0), refreshAction);
         SingleSourceHelper.registerRCPRuntimeActions(actionRegistry, this);
         OPIRunnerContextMenuProvider contextMenuProvider = new OPIRunnerContextMenuProvider(viewer, this);
         getSite().registerContextMenu(contextMenuProvider, viewer);
@@ -480,7 +487,7 @@ public final class OPIShell implements IOPIRuntime {
      */
     private static void sendUpdateCommand() {
         IServiceLocator serviceLocator = PlatformUI.getWorkbench();
-        ICommandService commandService = (ICommandService) serviceLocator.getService(ICommandService.class);
+        ICommandService commandService = serviceLocator.getService(ICommandService.class);
         try {
             Command command = commandService.getCommand(OPI_SHELLS_CHANGED_ID);
             command.executeWithChecks(new ExecutionEvent());
