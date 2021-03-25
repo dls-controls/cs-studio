@@ -340,7 +340,7 @@ public class PlotProcessor<XTYPE extends Comparable<XTYPE>>
                             }
                           }
                         }
-                        markers.add(new CursorMarker(cursor_x, axis.getScreenCoord(value), trace.getColor(), label));
+                        markers.add(new CursorMarker(cursor_x, axis.getScreenCoord(value), trace.getColor(), label, info));
                     }
                 }
             Collections.sort(markers);
