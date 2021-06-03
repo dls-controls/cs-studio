@@ -9,4 +9,13 @@
     <toc file="toc.xml" primary="false">
     </toc>
   </extension>
+  <extension
+      point="org.eclipse.ui.preferencePages">
+      <page
+          category="org.csstudio.platform.ui.css.applications.trends"
+          class="org.csstudio.archive.reader.appliance.PreferencePage"
+          id="org.csstudio.archive.reader.appliance.preferences"
+          name="Appliance Archiver Reader">
+      </page>
+  </extension>
 </plugin>

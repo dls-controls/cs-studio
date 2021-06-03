@@ -6,6 +6,7 @@ import java.util.Iterator;
 
 import org.csstudio.archive.vtype.ArchiveVNumber;
 import org.csstudio.archive.vtype.ArchiveVStatistics;
+import org.csstudio.archive.vtype.ArchiveVString;
 import org.csstudio.archive.vtype.TimestampHelper;
 import org.epics.archiverappliance.retrieval.client.DataRetrieval;
 import org.epics.archiverappliance.retrieval.client.EpicsMessage;
@@ -33,6 +34,7 @@ public class ApplianceOptimizedValueIterator extends ApplianceValueIterator {
 
     private final int requestedPoints;
     private final boolean useStatistics;
+    private boolean firstDisconnnect;
 
     /**
      * Constructor that fetches data from appliance archive reader.
@@ -57,6 +59,7 @@ public class ApplianceOptimizedValueIterator extends ApplianceValueIterator {
         this.requestedPoints = points;
         this.useStatistics = useStatistics;
         this.display = determineDisplay(reader, name, end);
+        this.firstDisconnnect = false;
         fetchData();
     }
 
@@ -140,8 +143,38 @@ public class ApplianceOptimizedValueIterator extends ApplianceValueIterator {
             if (closed) {
                 return null;
             }
-            message = mainIterator.next();
+            if (!reuseMessage)
+                message = mainIterator.next();
+            else {
+                message = savedMessage;
+                reuseMessage = false;
+            }
+
+            // Check if 'cnxlostepsecs' field value is set (for Raw data)
+            if (Preferences.showDisconnect()) {
+                VType check = checkDisconnect(message);
+                if (check != null)
+                    return check;
+
+                // Check if fieldvalues contains 'connectionChange' (for Optimized data)
+                if (message.getFieldValues().keySet().contains("connectionChange")) {
+                    if (Boolean.parseBoolean(message.getFieldValues().get("connectionChange"))
+                            && message.getNumberAt(4).intValue() == 0) {
+                        if (!firstDisconnnect) {
+                            firstDisconnnect = true;
+                            return new ArchiveVString(TimestampHelper.fromSQLTimestamp(message.getTimestamp()),
+                                    getSeverity(message.getSeverity()), getStatus(message.getStatus()),
+                                    "Disconnect in bin");
+                        } else
+                            return new ArchiveVString(TimestampHelper.fromSQLTimestamp(message.getTimestamp()),
+                                    getSeverity(message.getSeverity()), getStatus(message.getStatus()), "");
+                    }
+                }
+            }
+            savedMessage = null;
+            firstDisconnnect = false;
         }
+
         PayloadType type = mainStream.getPayLoadInfo().getType();
         if (type == PayloadType.WAVEFORM_DOUBLE) {
             if (closed) {

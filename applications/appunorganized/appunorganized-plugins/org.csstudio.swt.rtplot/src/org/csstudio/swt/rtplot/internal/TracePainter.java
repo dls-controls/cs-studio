@@ -189,6 +189,7 @@ public class TracePainter<XTYPE extends Comparable<XTYPE>>
         for (int i=0; i<N; ++i)
         {
             final PlotDataItem<XTYPE> item = data.get(i);
+
             final int x = clipX(Math.round(x_transform.transform(item.getPosition())));
             final double value = item.getValue();
             if (value_poly.size() > 0  && x != last_x)
@@ -201,6 +202,7 @@ public class TracePainter<XTYPE extends Comparable<XTYPE>>
             {
                 flushPolyLine(gc, value_poly, line_width);
                 last_x = last_y = -1;
+                checkAndDrawDisconnect(gc, x_transform, item);
             }
             else
             {
@@ -239,6 +241,7 @@ public class TracePainter<XTYPE extends Comparable<XTYPE>>
             {
                 flushPolyLine(gc, value_poly, line_width);
                 last_x = last_y = -1;
+                checkAndDrawDisconnect(gc, x_transform, item);
             }
             else
             {
@@ -408,6 +411,23 @@ public class TracePainter<XTYPE extends Comparable<XTYPE>>
     final private void drawPoint(final GC gc, final int x, final int y, final int size)
     {
         gc.fillOval(x-size/2, y-size/2, size, size);
+    }
+
+    /**
+     * Check whether the plot point item contains a disconnect signal and if so
+     * plot an additional vertical dashed line to indicate the disconnect.
+     * @param gc GC
+     * @param x_transform Horizontal axis
+     * @param item PlotDataItem
+     */
+    final private void checkAndDrawDisconnect(final GC gc, final ScreenTransform<XTYPE> x_transform,
+            final PlotDataItem<XTYPE> item) {
+        if (item.getInfo().contains("Disconnect")) {
+            final int x1 = clipX(x_transform.transform(item.getPosition()));
+            gc.setLineStyle(SWT.LINE_DOT);
+            gc.drawLine(x1, y_min, x1, y_max);
+            gc.setLineStyle(SWT.LINE_SOLID);
+        }
     }
 
     /** Fill area. All lists will be cleared.
